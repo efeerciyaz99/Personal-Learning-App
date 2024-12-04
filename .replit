@@ -1,0 +1,8 @@
+run = "ssh -T replit"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "ssh -T replit"]
