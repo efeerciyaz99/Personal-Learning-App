@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String        @id @default(cuid())
+  email       String        @unique
+  name        String?
+  preferences UserPreferences?
+  summaries   Summary[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  readingList ReadingList[]
+  annotations Annotation[]
+}
+
+model UserPreferences {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  style       String   // 'academic' | 'casual' | 'business'
+  detailLevel Int      // 1-5
+  focusAreas  String[] // ['main_points', 'examples', 'implications', 'citations']
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Summary {
+  id            String   @id @default(cuid())
+  title         String
+  content       String   @db.Text
+  sourceUrl     String
+  sourceType    String   // 'article' | 'video' | 'blog' | 'document'
+  keyPoints     String[]
+  themes        String[]
+  insights      Json     // Array of Insight objects
+  metadata      Json
+  isPublic      Boolean  @default(false)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  readingList   ReadingList[]
+  sourceRelations SummaryRelationship[] @relation("SourceSummary")
+  targetRelations SummaryRelationship[] @relation("RelatedSummary")
+  crossReferences String[]              // Store IDs of manually added cross-references
+  annotations Annotation[]
+}
+
+model ReadingList {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  summaryId   String
+  summary     Summary      @relation(fields: [summaryId], references: [id])
+  status      String       // 'unread' | 'reading' | 'completed'
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([summaryId])
+}
+
+model SummaryRelationship {
+  id               String   @id @default(cuid())
+  summaryId        String
+  relatedSummaryId String
+  strength         Float    // Similarity score
+  summary          Summary  @relation("SourceSummary", fields: [summaryId], references: [id])
+  relatedSummary   Summary  @relation("RelatedSummary", fields: [relatedSummaryId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([summaryId, relatedSummaryId])
+  @@index([summaryId])
+  @@index([relatedSummaryId])
+}
+
+model Annotation {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  summaryId String
+  userId    String
+  summary   Summary  @relation(fields: [summaryId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([summaryId])
+  @@index([userId])
+} 

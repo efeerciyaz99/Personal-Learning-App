@@ -1,8 +1,12 @@
-run = "ssh -T replit"
+run = "npm run dev"
 modules = ["nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
 
 [deployment]
-run = ["sh", "-c", "ssh -T replit"]
+run = ["sh", "-c", "npm run dev"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
